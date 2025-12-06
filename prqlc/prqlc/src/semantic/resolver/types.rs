@@ -382,20 +382,33 @@ fn maybe_type_intersection(a: Option<Ty>, b: Option<Ty>) -> Option<Ty> {
 }
 
 pub fn type_intersection(a: Ty, b: Ty) -> Ty {
-    match (a.kind, b.kind) {
-        (a_kind, b_kind) if a_kind == b_kind => Ty { kind: a_kind, ..a },
+    match (&a.kind, &b.kind) {
+        (a_kind, b_kind) if a_kind == b_kind => a,
 
         // tuple
-        (TyKind::Tuple(a_fields), TyKind::Tuple(b_fields)) => {
+        (TyKind::Tuple(_), TyKind::Tuple(_)) => {
+            let (TyKind::Tuple(a_fields), TyKind::Tuple(b_fields)) = (a.kind, b.kind) else {
+                unreachable!()
+            };
             type_intersection_of_tuples(a_fields, b_fields)
         }
 
         // array
-        (TyKind::Array(Some(a)), TyKind::Array(Some(b))) => {
-            Ty::new(TyKind::Array(Some(Box::new(type_intersection(*a, *b)))))
+        (TyKind::Array(Some(_)), TyKind::Array(Some(_))) => {
+            let (TyKind::Array(Some(a_inner)), TyKind::Array(Some(b_inner))) = (a.kind, b.kind)
+            else {
+                unreachable!()
+            };
+            Ty::new(TyKind::Array(Some(Box::new(type_intersection(
+                *a_inner, *b_inner,
+            )))))
         }
 
-        _ => todo!(),
+        _ => panic!(
+            "type_intersection not implemented for {} and {}",
+            write_ty(&a),
+            write_ty(&b)
+        ),
     }
 }
 
